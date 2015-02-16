@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+class Master():
+
+    def __init__(self):
+
+        self.version = '0.0.2'
+
+        print "this is Master init"
+
+if __name__ == '__main__':
+    scnmaster = Master()
+
