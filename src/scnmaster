@@ -1,12 +1,299 @@
 #!/usr/bin/env python
 
-class Master():
+import argparse
+import subprocess
+import os, sys
+import re
+
+
+
+class Master(object):
+    '''
+    get two files from user
+    one must be .wav and the other must be .mov
+    length of files should be exactly the same
+    then stitch them together
+    '''
 
     def __init__(self):
 
         self.version = '0.0.2'
 
-        print "this is Master init"
+        self.wavfile = None
+        self.movfile = None
+
+        args = self._parser()
+
+        self._processArgs(args)
+
+        self._durationVerification(args)
+
+        output = self._getOutputFile(self.wavfile, self.movfile, args.clean)
+
+        self._makeMaster(self.wavfile, self.movfile, args.destination, output)
+
+
+    def _parser(self):
+        parser = argparse.ArgumentParser(
+            prog = 'scnmaster',
+            formatter_class = argparse.RawTextHelpFormatter,
+            description = 'A script that creates master files based on audio and online file input',
+            usage = '%(prog)s wav mov destination')
+
+        parser.add_argument('files', help='wav & mov file',
+                            metavar='FILES', nargs=2)
+        parser.add_argument('-d', '--destination',
+                            help='Specify a destination folder',
+                            default=os.getcwd())
+        parser.add_argument('-cln', '--clean',
+                           help='Create a clean file instead of a master',
+                           action='store_true')
+
+        args = parser.parse_args()
+
+        return args
+
+
+    def _processArgs(self, args):
+        # verify that the supplied files are of the correct types
+        wavfile = None
+        movfile = None
+
+        for arg in args.files:
+            if arg[-3:] == "wav":
+                wavfile = arg
+            elif arg[-3:] == "mov":
+                movfile = arg
+
+        if not wavfile:
+            print "Sound (wav) file expected"
+            sys.exit(0)
+        else:
+            self.wavfile = wavfile
+
+        if not movfile:
+            print "Quicktime (mov) file expected"
+            sys.exit(0)
+        else:
+            self.movfile = movfile
+
+        # verify that target destination exists
+        if not os.path.exists(args.destination):
+            print "%s is not a valid destination path" % args.destination
+            sys.exit(0)
+
+
+    def _getDuration(self, input_file):
+        command = "ffmpeg -i %s 2>&1 | grep Duration | awk '{print $2}' | tr -d ," % str(input_file)
+        pipe = subprocess.Popen(command,
+                                shell=True,
+                                stdout=subprocess.PIPE)
+        duration = pipe.stdout.read()
+
+        return duration
+
+
+    def _durationVerification(self, args):
+        wav_duration = self._getDuration(self.wavfile)
+        mov_duration = self._getDuration(self.movfile)
+
+        if not wav_duration == mov_duration:
+            dur = (wav_duration, mov_duration)
+            print "\nLength not matching"
+            print "Length sound file: %sLength video file: %s" % dur
+
+            sys.exit(0)
+
+
+    def _queryYesNo(self, question, default="yes"):
+        """Ask a yes/no question via raw_input() and return their answer.
+
+        "question" is a string that is presented to the user.
+        "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+        The "answer" return value is True for "yes" or False for "no".
+        """
+        valid = {"yes": True, "y": True, "ye": True,
+                 "no": False, "n": False}
+        if default is None:
+            prompt = " [y/n] "
+        elif default == "yes":
+            prompt = " [Y/n] "
+        elif default == "no":
+            prompt = " [y/N] "
+        else:
+            raise ValueError("invalid default answer: '%s'" % default)
+
+        while True:
+            sys.stdout.write(question + prompt)
+            choice = raw_input().lower()
+            if default is not None and choice == '':
+                return valid[default]
+            elif choice in valid:
+                return valid[choice]
+            else:
+                sys.stdout.write("Please respond with 'yes' or 'no' "
+                                 "(or 'y' or 'n').\n")
+
+
+    def _getDurationString(self, filename):
+
+        filename = os.path.basename(filename)
+
+        pattern = re.compile('_\d+s_') # _{any amount of digits}s_
+
+        result = pattern.findall(filename)
+        if len(result) == 1:
+            result = result[0]
+        else:
+            print ("Error: "
+                   "Found more than one duration string in %s"
+                   "\nStrings found: %s" % (filename, result))
+            sys.exit(0)
+
+        # strip away leading and trailing undersocres
+        if result[0] == '_':
+            result = result[1:]
+        if result[-1] == '_':
+            result = result[:-1]
+
+        return result
+
+
+    def _getProjectString(self, filename, duration_string):
+
+        filename = os.path.basename(filename)
+
+        project_string = filename.split(duration_string)[0]
+
+        # strip away leading and trailing undersocres
+        if project_string[0] == '_':
+            project_string = project_string[1:]
+        if project_string[-1] == '_':
+            project_string = project_string[:-1]
+
+        return project_string
+
+
+    def _getVersionString(self, filename):
+
+        filename = os.path.basename(filename)
+
+        pattern = re.compile('_v\d\d\d')
+
+        result = pattern.findall(filename)
+
+        if len(result) == 1:
+            result = result[0]
+        else:
+            print ("Error: "
+                   "Found more than one version string in %s"
+                   "\nStrings foundL %s" %(filename, result))
+            sys.exit(0)
+
+        # strip away leading and trailing undersocres
+        if result[0] == '_':
+            result = result[1:]
+        if result[-1] == '_':
+            result = result[:-2]
+
+        # strip away any 'v's
+        result = result.replace('v', '')
+
+        return result
+
+
+    def _getLanguageString(self, filename, duration_string):
+
+        filename = os.path.basename(filename)
+
+        language_string = filename.split(duration_string)[1]
+        language_string = language_string.split('_')[1]
+
+        if len(language_string) != 3:
+            print ("Error: "
+                   "Language string not found or of wrong length"
+                   "Found the following in %s: %s"
+                   % (filename, language_string))
+
+        return language_string
+
+
+    def _getOutputFile(self, wavfile, movfile, clean=False):
+
+        wav_duration_string = self._getDurationString(wavfile)
+        mov_duration_string = self._getDurationString(movfile)
+
+        if wav_duration_string != mov_duration_string:
+            print ("Error:"
+                   "Duration string doesn't match. "
+                   "Found:\n%s\n%s"
+                   % (wav_duration_string, mov_duration_string))
+            sys.exit(0)
+
+        wav_project_string = self._getProjectString(wavfile,wav_duration_string)
+        mov_project_string = self._getProjectString(movfile,mov_duration_string)
+
+        if wav_project_string != mov_project_string:
+            print ("Error: "
+                   "Project names don't match. Names found:\n"
+                   "%s\n%s"
+                   % (project_name, temp_name))
+            sys.exit(0)
+
+        duration_string = mov_duration_string
+        project_string = mov_project_string
+        language_string = self._getLanguageString(movfile, duration_string)
+        wav_version = 'aud' + self._getVersionString(wavfile)
+        mov_version = 'onl' + self._getVersionString(movfile)
+        file_type = movfile.rsplit('.')[1]
+        if clean:
+            type_string = 'cln.%s' % file_type
+        else:
+            type_string = 'mst.%s' % file_type
+
+
+
+        output_file = '_'.join([project_string,
+                                duration_string,
+                                language_string,
+                                mov_version,
+                                wav_version,
+                                type_string])
+
+        return output_file
+
+
+    def _makeMaster(self, wavfile, movfile, destination, filename='output'):
+
+        output = os.path.join(destination, filename)
+
+        if os.path.exists(output):
+            question = '%s alrady exists. Overwrite?' % output
+            if not self._queryYesNo(question, default='no'):
+                sys.exit(0)
+
+        command = ("ffmpeg "
+                   "-loglevel panic "
+                   "-y " # this will overwrite even if file exists
+                   "-i %s "
+                   "-i %s "
+                   "-codec:video copy "
+                   "-codec:audio copy "
+                   "-map 1:a "
+                   "-map 0:v "
+                   "%s") % (movfile, wavfile, output)
+
+        print command
+
+
+        subprocess.Popen(command,
+                         shell=True,
+                         stdout=subprocess.PIPE)
+
+
 
 if __name__ == '__main__':
     scnmaster = Master()
