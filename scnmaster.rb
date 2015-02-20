@@ -2,14 +2,14 @@ require "formula"
 
 class Scnmaster < Formula
   homepage "http://shortcutoslo.no"
-  url "https://github.com/santonsen/homebrew-scnmaster/raw/master/dist/scnmaster_0.0.2/scnmaster_0.0.2.tar.gz"
-  sha1 "3614ff3e448f545c8a4a2e3d63be839aa9d78848"
+  url "https://github.com/santonsen/homebrew-scnmaster/raw/master/dist/scnmaster_0.0.3/scnmaster_0.0.3.tar.gz"
+  sha1 "841e7c5733c399d43b1eec8a50f5efa9129c018b"
 
   depends_on "ffmpeg"
 
   resource "pexpect" do
     url "https://pypi.python.org/packages/source/p/pexpect/pexpect-3.3.tar.gz"
-    sha1 "fa7105069c4b546ace2b1b04e077aacf97550f93"
+    sha1 "841e7c5733c399d43b1eec8a50f5efa9129c018b"
   end
 
   def install
