@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 
+import os, sys, re
+
+here = str(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(os.path.join(here, '..', 'libexec/vendor/lib/python2.7/site-packages/'))
+
 import argparse
 import subprocess, pexpect
-import os, sys, re
+
 
 class Master(object):
     '''
