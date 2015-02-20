@@ -13,7 +13,9 @@ class Scnmaster < Formula
   end
 
   def install
-    resource("pexpect").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor")}
+    ENV.prepend_create_path "PYTHONPATH", libexec/"lib/python2.7/site-packages"
+    system "python", Language::Python.setup_install_args(libexec)
+
     system "make", "prefix=#{prefix}",
                    "install"
   end
