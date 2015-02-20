@@ -19,7 +19,7 @@ class Master(object):
 
     def __init__(self):
 
-        self.version = '0.0.7'
+        self.version = '1.0.0'
 
         self.wavfile = None
         self.movfile = None
@@ -34,7 +34,9 @@ class Master(object):
 
         command = self._getCommand(self.wavfile, self.movfile, args.destination, output)
 
-        self._runCommand(command)
+        frame_count = self._getFrameCount(self.movfile)
+
+        self._runCommand(command, frame_count)
 
 
     def _parser(self):
@@ -308,11 +310,28 @@ class Master(object):
 
         return command
 
+    def _getFrameCount(self, movfile):
 
-    def _runCommand(self, command):
+        command = ("ffprobe "
+                   "-select_streams video "
+                   "-show_streams %s "
+                   "2>/dev/null "
+                   "| grep nb_frames"
+                   % movfile)
 
+        pipe = subprocess.Popen(command,
+                                shell=True,
+                                stdout=subprocess.PIPE)
+        frames = pipe.stdout.read()
+        frames = frames.split("=")[1]
+        frames = int(frames)
+
+        return frames
+
+
+    def _runCommand(self, command, frame_count):
         thread = pexpect.spawn(command)
-        print "started %s" % command
+        print "\n"
         cmpl = thread.compile_pattern_list([
             pexpect.EOF,
             "frame= *\d+",
@@ -320,11 +339,13 @@ class Master(object):
         while True:
             i = thread.expect_list(cmpl, timeout=None)
             if i == 0: # EOF
-                print "Complete!"
+                print "\n\nComplete!"
                 break
             elif i == 1:
-                frame_number = thread.match.group(0)
-                print frame_number
+                frame_number = int(thread.match.group(0).split('=')[1])
+                progress = int(frame_number/(frame_count/100.0))
+                sys.stdout.write("\r[{0}{1}] {2}%".format(('#'*progress), (' '*(100-progress)), progress))
+                sys.stdout.flush()
                 thread.close
             elif i ==2:
                 # unknown_line = thread.match.group(0)

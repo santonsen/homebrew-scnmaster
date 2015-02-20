@@ -1,5 +1,5 @@
 NAME = scnmaster
-VERSION = 0.0.7
+VERSION = 1.0.0
 MAINTAINER = Sebastian Antonsen <sebastian@stormstudios.no>
 
 BASE_DIR=dist
