@@ -19,7 +19,7 @@ class Master(object):
 
     def __init__(self):
 
-        self.version = '1.0.0'
+        self.version = '1.1.0'
 
         self.wavfile = None
         self.movfile = None
@@ -33,6 +33,7 @@ class Master(object):
         output = self._getOutputFile(self.wavfile, self.movfile, args.clean)
 
         command = self._getCommand(self.wavfile, self.movfile, args.destination, output)
+        print command
 
         frame_count = self._getFrameCount(self.movfile)
 
@@ -293,6 +294,8 @@ class Master(object):
 
         output = os.path.join(destination, filename)
 
+        meta_string = '"online source: {0} \nsound source: {1}"'.format(movfile, wavfile)
+
         if os.path.exists(output):
             question = '%s alrady exists. Overwrite?' % output
             if not self._queryYesNo(question, default='no'):
@@ -300,13 +303,14 @@ class Master(object):
 
         command = ("ffmpeg "
                    "-y " # this will overwrite even if file exists
-                   "-i %s "
-                   "-i %s "
+                   "-i {0} "
+                   "-i {1} "
                    "-codec:video copy "
                    "-codec:audio copy "
                    "-map 1:a "
                    "-map 0:v "
-                   "%s") % (movfile, wavfile, output)
+                   "-metadata comment={2} "
+                   "{3}".format(movfile,wavfile,meta_string,output))
 
         return command
 
