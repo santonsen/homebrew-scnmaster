@@ -14,6 +14,8 @@ class Scnmaster < Formula
 
   def install
     resource("pexpect").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor") }
+    bin.install Dir["#{libexec}/bin/*"]
+    bin.env_script_all_files(libexec/"bin", :PYTHONPATH => ENV["PYTHONPATH"])
 
     system "make", "prefix=#{prefix}",
                    "install"
