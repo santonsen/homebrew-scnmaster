@@ -13,7 +13,7 @@ class Scnmaster < Formula
   end
 
   def install
-    resource("pexpect").stage { system "python", *Language::Python.setup_install_args(libexec/) }
+    resource("pexpect").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor") }
 
     system "make", "prefix=#{prefix}",
                    "install"
