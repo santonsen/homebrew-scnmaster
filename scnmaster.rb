@@ -7,6 +7,10 @@ class Scnmaster < Formula
 
   depends_on "ffmpeg"
 
+  resource "pexpect" do
+    url "https://pypi.python.org/packages/source/p/pexpect/pexpect-3.3.tar.gz"
+    sha1 "0de72541d3f1374b795472fed841dce8"
+
   def install
     # Remove unrecognized options if warned by configure
     system "make", "prefix=#{prefix}",

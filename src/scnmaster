@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import subprocess
-import os, sys
-import re
-
-
+import subprocess, pexpect
+import os, sys, re
 
 class Master(object):
     '''
@@ -30,7 +27,9 @@ class Master(object):
 
         output = self._getOutputFile(self.wavfile, self.movfile, args.clean)
 
-        self._makeMaster(self.wavfile, self.movfile, args.destination, output)
+        command = self._getCommand(self.wavfile, self.movfile, args.destination, output)
+
+        self._runCommand(command)
 
 
     def _parser(self):
@@ -84,7 +83,12 @@ class Master(object):
 
 
     def _getDuration(self, input_file):
-        command = "ffmpeg -i %s 2>&1 | grep Duration | awk '{print $2}' | tr -d ," % str(input_file)
+        command = ("ffmpeg -i %s 2>&1 "
+                   "| grep Duration "
+                   "| awk '{print $2}' "
+                   "| tr -d ,"
+                   % str(input_file))
+
         pipe = subprocess.Popen(command,
                                 shell=True,
                                 stdout=subprocess.PIPE)
@@ -227,25 +231,39 @@ class Master(object):
         mov_duration_string = self._getDurationString(movfile)
 
         if wav_duration_string != mov_duration_string:
-            print ("Error:"
+            print ("Error: "
                    "Duration string doesn't match. "
                    "Found:\n%s\n%s"
                    % (wav_duration_string, mov_duration_string))
             sys.exit(0)
 
-        wav_project_string = self._getProjectString(wavfile,wav_duration_string)
-        mov_project_string = self._getProjectString(movfile,mov_duration_string)
+        wav_project_string = self._getProjectString(wavfile,
+                                                    wav_duration_string)
+        mov_project_string = self._getProjectString(movfile,
+                                                    mov_duration_string)
 
         if wav_project_string != mov_project_string:
             print ("Error: "
-                   "Project names don't match. Names found:\n"
-                   "%s\n%s"
+                   "Project names don't match. "
+                   "Found: \n%s\n%s"
                    % (project_name, temp_name))
+            sys.exit(0)
+
+        wav_language_string = self._getLanguageString(wavfile,
+                                                      wav_duration_string)
+        mov_language_string = self._getLanguageString(movfile,
+                                                      mov_duration_string)
+
+        if wav_language_string != mov_language_string:
+            print ("Error: "
+                   "Language strings don't match. "
+                   "Found: \n%s\n%s"
+                   % (wav_language_string, mov_language_string))
             sys.exit(0)
 
         duration_string = mov_duration_string
         project_string = mov_project_string
-        language_string = self._getLanguageString(movfile, duration_string)
+        language_string = mov_language_string
         wav_version = 'aud' + self._getVersionString(wavfile)
         mov_version = 'onl' + self._getVersionString(movfile)
         file_type = movfile.rsplit('.')[1]
@@ -253,8 +271,6 @@ class Master(object):
             type_string = 'cln.%s' % file_type
         else:
             type_string = 'mst.%s' % file_type
-
-
 
         output_file = '_'.join([project_string,
                                 duration_string,
@@ -266,7 +282,7 @@ class Master(object):
         return output_file
 
 
-    def _makeMaster(self, wavfile, movfile, destination, filename='output'):
+    def _getCommand(self, wavfile, movfile, destination, filename='output'):
 
         output = os.path.join(destination, filename)
 
@@ -276,7 +292,6 @@ class Master(object):
                 sys.exit(0)
 
         command = ("ffmpeg "
-                   "-loglevel panic "
                    "-y " # this will overwrite even if file exists
                    "-i %s "
                    "-i %s "
@@ -286,13 +301,30 @@ class Master(object):
                    "-map 0:v "
                    "%s") % (movfile, wavfile, output)
 
-        print command
+        return command
 
 
-        subprocess.Popen(command,
-                         shell=True,
-                         stdout=subprocess.PIPE)
+    def _runCommand(self, command):
 
+        thread = pexpect.spawn(command)
+        print "started %s" % command
+        cmpl = thread.compile_pattern_list([
+            pexpect.EOF,
+            "frame= *\d+",
+            '(.+)'])
+        while True:
+            i = thread.expect_list(cmpl, timeout=None)
+            if i == 0: # EOF
+                print "Complete!"
+                break
+            elif i == 1:
+                frame_number = thread.match.group(0)
+                print frame_number
+                thread.close
+            elif i ==2:
+                # unknown_line = thread.match.group(0)
+                # print unknown_line
+                pass
 
 
 if __name__ == '__main__':
