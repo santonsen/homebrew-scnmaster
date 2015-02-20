@@ -9,11 +9,11 @@ class Scnmaster < Formula
 
   resource "pexpect" do
     url "https://pypi.python.org/packages/source/p/pexpect/pexpect-3.3.tar.gz"
-    sha1 "0de72541d3f1374b795472fed841dce8"
+    sha1 "fa7105069c4b546ace2b1b04e077aacf97550f93"
   end
 
   def install
-    # Remove unrecognized options if warned by configure
+    resource("pexpect").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor")}
     system "make", "prefix=#{prefix}",
                    "install"
   end
