@@ -1,5 +1,5 @@
 NAME = scnmaster
-VERSION = 0.0.6
+VERSION = 0.0.7
 MAINTAINER = Sebastian Antonsen <sebastian@stormstudios.no>
 
 BASE_DIR=dist
@@ -36,7 +36,7 @@ tar:
 
 brew:HASH=$(shell openssl sha1 $(BUILD_ROOT)/$(TAR_NAME).tar.gz | tail -c 41)
 brew:
-	sed -i.tmp "0,/sha1.*/s//sha1 \"$(HASH)\"/g" $(NAME).rb
+	sed -i.tmp "1,/sha1.*/s/sha1.*/sha1 \"$(HASH)\"/g" $(NAME).rb
 	sed -i.tmp "/url/s/$(NAME)_...../$(NAME)_$(VERSION)/g" $(NAME).rb
 	rm $(NAME).rb.tmp
 

@@ -2,8 +2,8 @@ require "formula"
 
 class Scnmaster < Formula
   homepage "http://shortcutoslo.no"
-  url "https://github.com/santonsen/homebrew-scnmaster/raw/master/dist/scnmaster_0.0.6/scnmaster_0.0.6.tar.gz"
-  sha1 "1cba61d5b29e1761b0ffdb73377339670abd7188"
+  url "https://github.com/santonsen/homebrew-scnmaster/raw/master/dist/scnmaster_0.0.7/scnmaster_0.0.7.tar.gz"
+  sha1 "5245e122f251f70ac9ea8be279adc84cd93dc7ad"
 
   depends_on "ffmpeg"
 
