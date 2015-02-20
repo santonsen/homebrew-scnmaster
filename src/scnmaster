@@ -19,7 +19,7 @@ class Master(object):
 
     def __init__(self):
 
-        self.version = '1.1.0'
+        self.version = '1.1.1'
 
         self.wavfile = None
         self.movfile = None
@@ -33,7 +33,6 @@ class Master(object):
         output = self._getOutputFile(self.wavfile, self.movfile, args.clean)
 
         command = self._getCommand(self.wavfile, self.movfile, args.destination, output)
-        print command
 
         frame_count = self._getFrameCount(self.movfile)
 
@@ -335,7 +334,6 @@ class Master(object):
 
     def _runCommand(self, command, frame_count):
         thread = pexpect.spawn(command)
-        print "\n"
         cmpl = thread.compile_pattern_list([
             pexpect.EOF,
             "frame= *\d+",
@@ -348,7 +346,7 @@ class Master(object):
             elif i == 1:
                 frame_number = int(thread.match.group(0).split('=')[1])
                 progress = int(frame_number/(frame_count/100.0))
-                sys.stdout.write("\r[{0}{1}] {2}%".format(('#'*progress), (' '*(100-progress)), progress))
+                sys.stdout.write("\r[{0}{1}] {2}%".format(('#'*(progress/10)), (' '*(10-(progress/10))), progress))
                 sys.stdout.flush()
                 thread.close
             elif i ==2:
