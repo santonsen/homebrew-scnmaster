@@ -14,7 +14,7 @@ class Master(object):
 
     def __init__(self):
 
-        self.version = '0.0.3'
+        self.version = '0.0.4'
 
         self.wavfile = None
         self.movfile = None
