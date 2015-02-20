@@ -9,7 +9,7 @@ class Scnmaster < Formula
 
   resource "pexpect" do
     url "https://pypi.python.org/packages/source/p/pexpect/pexpect-3.3.tar.gz"
-    sha1 "25e1276510bd024b35ae8d285f8dd81cbd41b97e"
+    sha1 "fa7105069c4b546ace2b1b04e077aacf97550f93"
   end
 
   def install
